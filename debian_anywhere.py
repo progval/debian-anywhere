@@ -72,6 +72,7 @@ def download_tarball(tempdir, url):
                 assert not name.startswith('/')
             tf.extractall(tempdir)
 
+
 ########################
 # Installers
 
@@ -105,14 +106,36 @@ class Commands:
 
     @installer
     def make(self):
-        assert False # TODO
+        # Debian's make has no 'configure' script
+        download_tarball(
+                tempdir,
+                'http://alpha.gnu.org/gnu/make/make-4.1.90.tar.bz2')
+        self._configure(
+                source_dir='make-4.1.90',
+                prefix=self._tempdir)
+
+        orig_cwd = os.getcwd()
+        try:
+            os.chdir(os.path.join(tempdir, 'make-4.1.90'))
+            subprocess.check_call(['./build.sh'])
+            subprocess.check_call(['./make', 'install'])
+        finally:
+            os.chdir(orig_cwd)
+        assert is_installed('make'), \
+                'Install of make did not add the executable in the PATH.'
 
     @installer
     def fakeroot(self):
         download_tarball(
                 tempdir,
                 'http://http.debian.net/debian/pool/main/f/fakeroot/fakeroot_1.20.2.orig.tar.bz2')
-        assert False # TODO
+        self._configure(
+                source_dir='fakeroot-1.20.2',
+                prefix=self._utilsdir)
+        self._make('fakeroot-1.20.2') # Does not build. Why?
+        self._make_install('fakeroot-1.20.2')
+        assert is_installed('fakeroot'), \
+                'Install of fakeroot did not add the executable in the PATH.'
 
     @installer
     def fakechroot(self):
@@ -169,10 +192,16 @@ def main(target, tempdir):
     commands = Commands(target, utils_dir, tempdir)
     commands.debootstrap(install_only=True)
     commands.fakechroot(install_only=True)
-    commands.fakeroot(which('fakechroot'), which('debootstrap'),
-            '--variant=fakechroot',
-            'stable',
-            os.path.join(target, 'root'))
+    if os.environ.get('FAKECHROOT', '') == 'true':
+        commands.fakeroot(which('debootstrap'),
+                '--variant=fakechroot',
+                'stable',
+                os.path.join(target, 'root'))
+    else:
+        commands.fakeroot(which('fakechroot'), which('debootstrap'),
+                '--variant=fakechroot',
+                'stable',
+                os.path.join(target, 'root'))
 
     script_path = os.path.join(target, 'chroot.sh')
     with open(script_path, 'a') as fd:
