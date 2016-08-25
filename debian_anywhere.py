@@ -155,9 +155,17 @@ class Commands:
         download_tarball(
                 tempdir,
                 'http://http.debian.net/debian/pool/main/d/debootstrap/debootstrap_1.0.81.tar.gz')
+        os.mkdir(os.path.join(self._tempdir, 'share'))
+        os.mkdir(os.path.join(self._tempdir, 'share', 'debootstrap'))
         shutil.copy(
                 os.path.join(self._tempdir, 'debootstrap-1.0.81', 'debootstrap'),
                 os.path.join(self._tempdir, 'bin', 'debootstrap'))
+        shutil.copy(
+                os.path.join(self._tempdir, 'debootstrap-1.0.81', 'functions'),
+                os.path.join(self._tempdir, 'share', 'debootstrap', 'functions'))
+        shutil.copytree(
+                os.path.join(self._tempdir, 'debootstrap-1.0.81', 'scripts'),
+                os.path.join(self._tempdir, 'share', 'debootstrap', 'scripts'))
 
 ##################################
 # chroot script
@@ -192,6 +200,7 @@ def main(target, tempdir):
     commands = Commands(target, utils_dir, tempdir)
     commands.debootstrap(install_only=True)
     commands.fakechroot(install_only=True)
+    os.environ['DEBOOTSTRAP_DIR'] = os.path.join(tempdir, 'share', 'debootstrap')
     if os.environ.get('FAKECHROOT', '') == 'true':
         commands.fakeroot(which('debootstrap'),
                 '--variant=fakechroot',
