@@ -12,6 +12,8 @@ if sys.version_info >= (3,):
     from urllib.request import urlopen
 else:
     from urllib2 import urlopen
+
+if sys.version_info < (3, 3):
     FileExistsError = os.error
 
 ###########################
