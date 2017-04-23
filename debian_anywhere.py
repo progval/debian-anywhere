@@ -158,7 +158,7 @@ class Commands:
                 'Install of fakeroot did not add the executable in the PATH.'
 
     def _patch_fakechroot(self):
-        fc_base = os.path.join(tempdir, 'fakechroot-2.18')
+        fc_base = os.path.join(tempdir, 'fakechroot-2.17.2')
         print('Patching fakechroot: %s' % fc_base)
         response = urlopen('https://raw.githubusercontent.com/sveniu/fakechroot/628237d9e421d6f882be32a061f8f786a0d47103/src/audit.c')
         with open(os.path.join(fc_base, 'src', 'audit.c'), 'ab') as fd:
