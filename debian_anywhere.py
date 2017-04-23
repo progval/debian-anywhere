@@ -235,9 +235,11 @@ def main(target, tempdir):
     commands = Commands(target, utils_dir, tempdir)
     commands.debootstrap(install_only=True)
     commands.fakechroot(install_only=True)
-    os.environ['DEBOOTSTRAP_DIR'] = os.path.join(tempdir, 'share', 'debootstrap')
+    debootstrap_path = which('debootstrap')
+    if debootstrap_path.startswith(tempdir):
+        os.environ['DEBOOTSTRAP_DIR'] = os.path.join(tempdir, 'share', 'debootstrap')
     if os.environ.get('FAKECHROOT', '') == 'true':
-        commands.fakeroot(which('debootstrap'),
+        commands.fakeroot(debootstrap_path,
                 '--variant=fakechroot',
                 'stable',
                 os.path.join(target, 'root'))
@@ -246,6 +248,8 @@ def main(target, tempdir):
                 '--variant=fakechroot',
                 'stable',
                 os.path.join(target, 'root'))
+    if debootstrap_path.startswith(tempdir):
+        del os.environ['DEBOOTSTRAP_DIR']
 
     script_path = os.path.join(target, 'chroot.sh')
     with open(script_path, 'a') as fd:
