@@ -157,16 +157,31 @@ class Commands:
         assert is_installed('fakeroot'), \
                 'Install of fakeroot did not add the executable in the PATH.'
 
+    def _patch_fakechroot(self):
+        fc_base = os.path.join(tempdir, 'fakechroot-2.18')
+        print('Patching fakechroot: %s' % fc_base)
+        response = urlopen('https://raw.githubusercontent.com/sveniu/fakechroot/628237d9e421d6f882be32a061f8f786a0d47103/src/audit.c')
+        with open(os.path.join(fc_base, 'src', 'audit.c'), 'ab') as fd:
+            try:
+                fd.write(response.read())
+            finally:
+                response.close()
+        subprocess.check_call(['sed', '-i', 's/acct/acct\\n    audit/',
+            os.path.join(fc_base, 'configure.ac')])
+        subprocess.check_call(['sed', '-i', 's/acct.c/acct.c \\n    audit/',
+            os.path.join(fc_base, 'src', 'Makefile.am')])
+
     @installer
     def fakechroot(self):
         download_tarball(
                 tempdir,
-                'http://http.debian.net/debian/pool/main/f/fakechroot/fakechroot_2.18.orig.tar.gz')
+                'http://http.debian.net/debian/pool/main/f/fakechroot/fakechroot_2.17.2.orig.tar.gz')
+        self._patch_fakechroot()
         self._configure(
-                source_dir='fakechroot-2.18',
+                source_dir='fakechroot-2.17.2',
                 prefix=self._utilsdir)
-        self._make('fakechroot-2.18')
-        self._make_install('fakechroot-2.18')
+        self._make('fakechroot-2.17.2')
+        self._make_install('fakechroot-2.17.2')
         assert is_installed('fakechroot'), \
                 'Install of fakechroot did not add the executable in the PATH.'
 
@@ -174,17 +189,17 @@ class Commands:
     def debootstrap(self):
         download_tarball(
                 tempdir,
-                'http://http.debian.net/debian/pool/main/d/debootstrap/debootstrap_1.0.81.tar.gz')
+                'http://http.debian.net/debian/pool/main/d/debootstrap/debootstrap_1.0.67.tar.gz')
         os.mkdir(os.path.join(self._tempdir, 'share'))
         os.mkdir(os.path.join(self._tempdir, 'share', 'debootstrap'))
         shutil.copy(
-                os.path.join(self._tempdir, 'debootstrap-1.0.81', 'debootstrap'),
+                os.path.join(self._tempdir, 'debootstrap-1.0.67', 'debootstrap'),
                 os.path.join(self._tempdir, 'bin', 'debootstrap'))
         shutil.copy(
-                os.path.join(self._tempdir, 'debootstrap-1.0.81', 'functions'),
+                os.path.join(self._tempdir, 'debootstrap-1.0.67', 'functions'),
                 os.path.join(self._tempdir, 'share', 'debootstrap', 'functions'))
         shutil.copytree(
-                os.path.join(self._tempdir, 'debootstrap-1.0.81', 'scripts'),
+                os.path.join(self._tempdir, 'debootstrap-1.0.67', 'scripts'),
                 os.path.join(self._tempdir, 'share', 'debootstrap', 'scripts'))
 
 ##################################
