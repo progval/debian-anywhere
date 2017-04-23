@@ -59,6 +59,21 @@ def installer(f):
             subprocess.check_call((command,) + args)
     return newf
 
+class UnnamedBufferedRandom:
+    """Wrapper for BufferedRandom that does not have a 'name' attribute."""
+    def __init__(self, obj):
+        self.__obj = obj
+
+    def __getattr__(self, attr_name):
+        if attr_name == 'name':
+            raise AttributeError()
+        return getattr(self.__obj, attr_name)
+
+    def __setattr__(self, attr_name, attr_value):
+        if attr_name == '_UnnamedBufferedRandom__obj':
+            super(UnnamedBufferedRandom, self).__setattr__(attr_name, attr_value)
+        return setattr(self.__obj, attr_name, attr_value)
+
 def download_tarball(tempdir, url):
     with tempfile.TemporaryFile() as fd:
         response = urlopen(url)
@@ -67,6 +82,9 @@ def download_tarball(tempdir, url):
         finally:
             response.close()
         fd.seek(0)
+        if hasattr(fd, 'name') and not isinstance(fd.name, str):
+            # WTF, Python 3.2?! Why is fd.name an int?!
+            fd = UnnamedBufferedRandom(fd)
         with tarfile.open(fileobj=fd) as tf:
             for name in tf.getnames():
                 # See the warning:
