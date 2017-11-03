@@ -144,11 +144,17 @@ class Commands:
         assert is_installed('make'), \
                 'Install of make did not add the executable in the PATH.'
 
+    def _patch_fakeroot(self):
+        fr_base = os.path.join(tempdir, 'fakeroot-1.20.2')
+        subprocess.check_call(['sed', '-i', 's,#ifdef HAVE_SYS_CAPABILITY_H,#include <linux/capability.h>\\n#ifdef HAVE_SYS_CAPABILITY_H,',
+            os.path.join(fr_base, 'libfakeroot.c')])
+
     @installer
     def fakeroot(self):
         download_tarball(
                 tempdir,
                 'http://http.debian.net/debian/pool/main/f/fakeroot/fakeroot_1.20.2.orig.tar.bz2')
+        self._patch_fakeroot()
         self._configure(
                 source_dir='fakeroot-1.20.2',
                 prefix=self._utilsdir)
